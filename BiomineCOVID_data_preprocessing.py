@@ -16,28 +16,32 @@ if __name__ == '__main__':
     Biomine_data = pd.read_csv('human_3_oct_2018.bmg', sep=" ", header=None, skiprows=6)
     Biomine_data.columns = ["from","to","relation","weightProb"]
     
-    # load COVID network dataset
-    COVID_proteinGene665_mapped_complete_BiomineNamingFormat = pd.read_csv('COVID_proteinGene665_mapped_complete_BiomineNamingFormat.csv', 
+    # load COVID network dataset and node mapping
+    COVID_proteinGene333_mapped_complete_BiomineNamingFormat = pd.read_csv('COVID_proteinGene333_mapped_complete_BiomineNamingFormat.csv', 
         header=None, index_col=0, squeeze=True, sep=',').to_dict()
     COVID_viral_gene_mapped = pd.read_csv('COVID_viral_gene_mapped.csv', header=None, index_col=0, squeeze=True, sep='\t').to_dict()
     COVID_network = pd.read_csv('COVID_network_edgelist.csv', header=None, sep='\t')
-    print('len of COVID_proteinGene665_mapped_complete_BiomineNamingFormat dict:', len(COVID_proteinGene665_mapped_complete_BiomineNamingFormat))
+    geneList_by_cell_paper_mapped_uniprot = list(pd.read_csv("geneList_by_cell_paper_mapped.newer.uniprot.csv", header=None)[0])
+    print('len of COVID_proteinGene333_mapped_complete_BiomineNamingFormat dict:', len(COVID_proteinGene333_mapped_complete_BiomineNamingFormat))
     print('len of COVID_viral_gene_mapped dict:', len(COVID_viral_gene_mapped))
+    print('len of geneList_by_cell_paper_mapped_uniprot (should be 439):', len(geneList_by_cell_paper_mapped_uniprot))
     
-    ## merge COVID_viral_gene_mapped and COVID_proteinGene665_mapped_complete_BiomineNamingFormat, since pandas will replace those not in dict with NaN
-    COVID_viral_gene_mapped.update(COVID_proteinGene665_mapped_complete_BiomineNamingFormat)
-    print('len of COVID_viral_gene_mapped dict after merge:', len(COVID_viral_gene_mapped)) # should be 692
+    ## merge COVID_viral_gene_mapped and COVID_proteinGene333_mapped_complete_BiomineNamingFormat, since pandas will replace those not in dict with NaN
+    COVID_viral_gene_mapped.update(COVID_proteinGene333_mapped_complete_BiomineNamingFormat)
+    print('len of COVID_viral_gene_mapped dict after merge (check if == 360):', len(COVID_viral_gene_mapped)) # should be 333+27
     
-    ## ====== NOTE that now COVID_viral_gene_mapped is complete map that combined COVID_proteinGene665_mapped_complete_BiomineNamingFormat
+    ## ====== NOTE that now COVID_viral_gene_mapped is complete map that combined COVID_proteinGene333_mapped_complete_BiomineNamingFormat
     ## map COVID network to proper naming (with 'COVID_' prefix and replace with Biomine Formatted EntrezID, UniProt, etc.)
     COVID_network_mapped = COVID_network.copy()
     COVID_network_mapped.columns = ["from","to"]
+    print("Original COVID network ===============================================")
     print(COVID_network_mapped.head(10))
     COVID_network_mapped['from'] = COVID_network_mapped['from'].map(COVID_viral_gene_mapped)
     COVID_network_mapped['to'] = COVID_network_mapped['to'].map(COVID_viral_gene_mapped)
+    print("Reformatted COVID network ===============================================")
     print(COVID_network_mapped.head(10))
-    
-    with open('COVID_viral_gene_mapped_dict_All692node.pickle', 'wb') as f4:
+    print("=========================================================================")
+    with open('COVID_viral_and_human_node_mapped_dict_All360node.pickle', 'wb') as f4:
         pickle.dump(COVID_viral_gene_mapped, f4)
     with open('COVID_network_mapped_dataFrame_All695edge.pickle', 'wb') as f4:
         pickle.dump(COVID_network_mapped, f4)
@@ -57,7 +61,13 @@ if __name__ == '__main__':
         pickle.dump(Biomine_data_unique, f2)
     
     ## find level 1 connection of COVID network
-    human_node_in_COVID_network = list(COVID_proteinGene665_mapped_complete_BiomineNamingFormat.values())
+    human_node_in_COVID_network = list(COVID_proteinGene333_mapped_complete_BiomineNamingFormat.values())
+    print("len of human_node_in_COVID_network:", len(human_node_in_COVID_network))
+    print("how many human node in PPI network exist in geneList_by_cell_paper_mapped_uniprot:", len([i for i in human_node_in_COVID_network if i in geneList_by_cell_paper_mapped_uniprot]))
+    human_node_in_COVID_network = [*geneList_by_cell_paper_mapped_uniprot, *human_node_in_COVID_network]
+    print("len of human_node_in_COVID_network NOW:", len(human_node_in_COVID_network))
+    human_node_in_COVID_network = list(set(human_node_in_COVID_network))
+    print("len of human_node_in_COVID_network NOW after remove duplicates:", len(human_node_in_COVID_network))
     COVIDhuman_node_andlevel1_node_in_Biomine_data_unique_edgelist = Biomine_data_unique[Biomine_data_unique[['from','to']].isin(human_node_in_COVID_network).any(1)]
     COVIDhuman_node_andlevel1_node_in_Biomine_data_unique_nodelist = list(pd.concat([COVIDhuman_node_andlevel1_node_in_Biomine_data_unique_edgelist['from'], COVIDhuman_node_andlevel1_node_in_Biomine_data_unique_edgelist['to']]).unique())
     COVIDviral_nodelist = ['COVID_E','COVID_M','COVID_N','COVID_S','COVID_nsp1','COVID_nsp10','COVID_nsp11','COVID_nsp12',
@@ -67,7 +77,7 @@ if __name__ == '__main__':
     print('len of COVIDhuman_node_andlevel1_node_in_Biomine_data_unique_nodelist:', len(COVIDhuman_node_andlevel1_node_in_Biomine_data_unique_nodelist))
     print('len of COVIDviral_nodelist:', len(COVIDviral_nodelist))
     
-    node_to_skip_in_all_stages = [*COVIDhuman_node_andlevel1_node_in_Biomine_data_unique_nodelist, *human_node_in_COVID_network, *COVIDviral_nodelist]
+    node_to_skip_in_all_stages = [*geneList_by_cell_paper_mapped_uniprot, *COVIDhuman_node_andlevel1_node_in_Biomine_data_unique_nodelist, *human_node_in_COVID_network, *COVIDviral_nodelist]
     print('len of node_to_skip_in_all_stages with duplicates (human_node_in_COVID_network + COVIDhuman_node_andlevel1_node_in_Biomine_data_unique_nodelist + COVIDviral_nodelist)', len(node_to_skip_in_all_stages))
     ## remove duplicated nodes in node_to_skip_in_all_stages
     node_to_skip_in_all_stages = list(set(node_to_skip_in_all_stages))
@@ -138,6 +148,7 @@ if __name__ == '__main__':
     ## map Biomine string nodes with number
     node_name_list = pd.concat([Biomine_data_unique_withCOVID_Ready4Stage1['from'], Biomine_data_unique_withCOVID_Ready4Stage1['to']]).unique()
     node_name_mapping = { node_name_list[i]: i for i in range(len(node_name_list)) }
+    print("After merge and duplicates/loops removal, how many node left:", len(node_name_mapping))
     with open('node_name_mapping_Biomine_data_unique_withCOVID_Ready4Stage1.pickle', 'wb') as f4:
         pickle.dump(node_name_mapping, f4)
     Biomine_data_unique_withCOVID_Ready4Stage1['from'] = Biomine_data_unique_withCOVID_Ready4Stage1['from'].map(node_name_mapping)

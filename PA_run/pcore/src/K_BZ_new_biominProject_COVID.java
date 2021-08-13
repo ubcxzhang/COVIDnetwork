@@ -216,7 +216,7 @@ public class K_BZ_new_biominProject_COVID {
     }
 
     public int compute_etaDegree_foraliveVertices_filter_Sequential() {
-    // gy: already modified for COVID analysis, cannot smoothly change to parallel ver above!
+        // gy: already modified for COVID analysis, cannot smoothly change to parallel ver above!
 
 
         int cnt_alive=0; // alived after CLT + nodes in white list
@@ -647,13 +647,17 @@ public class K_BZ_new_biominProject_COVID {
     public static void main(String[] args) throws Exception {
 
         //args = new String[] { "biomine-proc.w", "0.1", "1500", "16", "20", "20" };
-        args = new String[] { "Biomine_data_unique_withCOVID_renamed-proc.w", "0.5", "1000", "17", "5", "10", "node_to_skip.txt"};
+        //gy 210722 omitted for BIB paper added experiments
+//        args = new String[] { "Biomine_data_unique_withCOVID_renamed-proc.w", "0.5", "1000", "17", "5", "10", "node_to_skip.txt"};
 
 
         if (args.length < 7) {
             System.err.println("Specify: basename eta L precision thresh_sumPQ threhsold_etaDegree WhiteList_filename DPtype(optional)");
             System.exit(1);
         }
+
+        System.out.println("Basename: " + args[0] + " eta: " + args[1] + " L: " + args[2] +" precision: " + args[3] + " stage-1-threshold: " + args[4] + " stage-2-threshold: " + args[5] + "WhiteList_filename: " + args[6]);
+
 
         String basename = args[0];
         double eta = Double.parseDouble(args[1]);
