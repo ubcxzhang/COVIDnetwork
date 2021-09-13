@@ -6,7 +6,7 @@ This repo contains two parts of program: data preprocessing and peeling algorith
 
 Source data availability: human Biomine database can be found at [biomine.ijs.si](https://biomine.ijs.si/) and for SARS-CoV-2-human protein-protein interaction network please check [nature.com/articles/s41586-020-2286-9#data-availability](https://www.nature.com/articles/s41586-020-2286-9#data-availability). Gene list identified by CRISPR screening can be found at [cell.com/cell/fulltext/S0092-8674(20)31392-1?#supplementaryMaterial](https://www.cell.com/cell/fulltext/S0092-8674(20)31392-1?#supplementaryMaterial), they selected the top and bottom 250 genes from their sorted gene list for analysis so we also select these 500 genes in our research. We map the selected list of genes to its corresponding UniProt indexes in Biomine. When UniPort index is not available, STRING index is used and those that still failed to map are discarded. Eventually 439 of the genes are mapped and integrated in our research.
 
-`BiomineCOVID_data_preprocessing.py` will generate a duplicated/loop-free version of [Human Biomine + PPI network] dataset for PA. Before in Biomine database/PPI network, nodes are `string` named, they are now renamed to `integer`. 
+`BiomineCOVID_data_preprocessing.py` will generate a duplicated/loop-free version of [Human Biomine + PPI network] dataset for PA. Before in Biomine database/PPI network, nodes are `string` named, they are now renamed to `integer`. Be sure to put the code and data under same directory (currently datasets are in data/ folder, and the Human Biomine database is not included due to the giant volume).
 
 The program outputs three important files:
 - `Biomine_data_unique_withCOVID_renamed.txt`: dataset to be fed into PA

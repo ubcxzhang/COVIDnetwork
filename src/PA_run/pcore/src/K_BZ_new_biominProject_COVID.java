@@ -25,7 +25,7 @@ public class K_BZ_new_biominProject_COVID {
     int L; //same as before
     int m; //same as before
 
-    double threshold_sumPQ;
+    double threshold_sumP;
     int threhsold_etaDegree;
     String whiteListFilename; // filename for list of node to skip screening
 
@@ -40,9 +40,9 @@ public class K_BZ_new_biominProject_COVID {
     int[] pos; //same as before
 
 
-    //step 1: deleting vertices based on their value of sum(pi) and sum(1-pi)
-    //for a vertex v, deleted_step1(v) returns true if either sum(pi) < threshold_sumPQ or sum(1-pi) < threshold_sumPQ
-    //and deleted_step1(v) returns false if sum(pi) >= threshold_sumPQ or sum(1-pi) >= threshold_sumPQ
+    //step 1: deleting vertices based on their value of sum(pi)
+    //for a vertex v, deleted_step1(v) returns true if either sum(pi) < threshold_sumP
+    //and deleted_step1(v) returns false if sum(pi) >= threshold_sumP
     //in fact, if deleted_step1(v) is true, it means that v has been deleted.
     final BitSet deleted_step1;
 
@@ -62,7 +62,7 @@ public class K_BZ_new_biominProject_COVID {
 
     int md; // max eta-degree
 
-    public K_BZ_new_biominProject_COVID(String basename, double eta, int L, int precision, double threshold_sumPQ,
+    public K_BZ_new_biominProject_COVID(String basename, double eta, int L, int precision, double threshold_sumP,
                                         int threhsold_etaDegree, String whiteListFilename, String DPtype) throws Exception {
 
         G = ArcLabelledImmutableGraph.load(basename);
@@ -74,7 +74,7 @@ public class K_BZ_new_biominProject_COVID {
         this.L = L;
         this.precision = precision;
 
-        this.threshold_sumPQ = threshold_sumPQ;
+        this.threshold_sumP = threshold_sumP;
         this.threhsold_etaDegree = threhsold_etaDegree;
         this.whiteListFilename = whiteListFilename;
 
@@ -95,14 +95,13 @@ public class K_BZ_new_biominProject_COVID {
         Arrays.fill(deg, -1); //new: -1 is for vertices removed
         Arrays.fill(pos, -1); //new: -1 is for vertices removed
 
-        // it keeps track of vertices which are removed based on their sumP and sumQ values
+        // it keeps track of vertices which are removed based on their sumP values
         deleted_step1 = new BitSet(n);
 
         long startTime = System.currentTimeMillis();
 
 
-//        remove_byFilter_sumP_sumQ_Parallel();  //removing vertices based on sumP and sumQ
-        remove_byFilter_sumP_sumQ_Sequential(); //the same function, but run sequentially
+        remove_byFilter_sumP_Sequential(); //the same function, but run sequentially
 
         deleted_step2 = (BitSet) deleted_step1.clone();
         //just for test
@@ -299,45 +298,19 @@ public class K_BZ_new_biominProject_COVID {
         }
     }
 
-    public void remove_byFilter_sumP_sumQ_Parallel() {
-
-        BigInteger cnt_alive = IntStream.range(0, n).parallel().map(u -> {
-
-            ArcLabelledImmutableGraph H = G.copy();
-
-            Label[] u_label = H.labelArray(u);
-
-            double[] sumP_sumQ = find_sumP_sumQ(u_label);
-            //sumP_sumQ[0]=sumP for a vertex u
-            //sumP_sumQ[1]=sumQ for a vertex u
-
-            if ((sumP_sumQ[0] < threshold_sumPQ) || (sumP_sumQ[1] < threshold_sumPQ)) {
-                deleted_step1.set(u);
-                return 0;
-            }
-            else {
-                return 1;
-            }
-
-        }).mapToObj(BigInteger::valueOf).reduce(BigInteger.ZERO, BigInteger::add);
-
-        System.out.println("Number of vertices alive after filtering by sumP_sumQ=" + cnt_alive + "==" + (n-deleted_step1.cardinality()));
-
-    }
-
-    public void remove_byFilter_sumP_sumQ_Sequential() {
+    public void remove_byFilter_sumP_Sequential() {
 
 
         int count = 0;
         for (int u = 0; u < n; u++) {
             Label[] u_label = G.labelArray(u);
-            double[] sumP_sumQ = find_sumP_sumQ(u_label);
+            double[] sumP_sum = find_sumP_sum(u_label);
             // if current node u is in white list, skip calculation
             if (whiteList.get(u)) {
                 count++;
                 continue;
             }
-            if ((sumP_sumQ[0] < threshold_sumPQ) || (sumP_sumQ[1] < threshold_sumPQ)) {
+            if ((sumP_sum[0] < threshold_sumP)) {
                 deleted_step1.set(u);
 
             } else {
@@ -345,15 +318,14 @@ public class K_BZ_new_biominProject_COVID {
             }
         }
         System.out.println(
-                "Number of vertices alive after filtering by sumP_sumQ=" + count + "==" + (n - deleted_step1.cardinality()));
+                "Number of vertices alive after filtering by sumP_sum=" + count + "==" + (n - deleted_step1.cardinality()));
         System.out.println("Vertices_deleted=" + deleted_step1.cardinality() + " n=" + n);
     }
 
-    public double[] find_sumP_sumQ(Label[] u_label) {
-        double[] sumP_sumQ = new double[2];
+    public double[] find_sumP_sum(Label[] u_label) {
+        double[] sumP_sum = new double[2];
 
         double sum_for_p = 0.0;
-        double sum_for_q = 0.0;
 
         //prob is used to change the long value of an edge to its actual probability.
         //for instance, when precision=2 in a webgraph, for an edge e with probability 0.8,
@@ -367,16 +339,13 @@ public class K_BZ_new_biominProject_COVID {
             Long val = u_label[j].getLong();
 
             double sumP = val * prob; //sumP > temP
-            double sumQ = 1 - (val * prob);
 
             sum_for_p += sumP;
-            sum_for_q += sumQ;
 
         }
-        sumP_sumQ[0] = sum_for_p; //sum(pi)
-        sumP_sumQ[1] = sum_for_q; //sum(1-pi)
+        sumP_sum[0] = sum_for_p; //sum(pi)
 
-        return sumP_sumQ;
+        return sumP_sum;
     }
 
     private void computeInitialEtaDegs_inProcessor(int processor) {

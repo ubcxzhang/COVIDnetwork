@@ -78,10 +78,10 @@ if __name__ == '__main__':
     print('len of COVIDviral_nodelist:', len(COVIDviral_nodelist))
     
     node_to_skip_in_all_stages = [*geneList_by_cell_paper_mapped_uniprot, *COVIDhuman_node_andlevel1_node_in_Biomine_data_unique_nodelist, *human_node_in_COVID_network, *COVIDviral_nodelist]
-    print('len of node_to_skip_in_all_stages with duplicates (human_node_in_COVID_network + COVIDhuman_node_andlevel1_node_in_Biomine_data_unique_nodelist + COVIDviral_nodelist)', len(node_to_skip_in_all_stages))
+    print('len of node_to_skip_in_all_stages with duplicates:', len(node_to_skip_in_all_stages))
     ## remove duplicated nodes in node_to_skip_in_all_stages
     node_to_skip_in_all_stages = list(set(node_to_skip_in_all_stages))
-    print('len of node_to_skip_in_all_stages after removing duplicates', len(node_to_skip_in_all_stages))
+    print('len of node_to_skip_in_all_stages after removing duplicates:', len(node_to_skip_in_all_stages))
     with open('node_to_skip_in_all_stages.pickle', 'wb') as f2:
         pickle.dump(node_to_skip_in_all_stages, f2)
     with open('COVIDhuman_node_andlevel1_node_in_Biomine_data_unique_edgelist.pickle', 'wb') as f2:
